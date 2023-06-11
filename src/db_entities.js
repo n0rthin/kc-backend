@@ -1,7 +1,5 @@
 const { Sequelize, Model, DataTypes } = require("sequelize");
-const sequelize = new Sequelize(
-  "sqlite::/Users/vlad/Projects/keycue/kc-backend/article_insights.db"
-);
+const sequelize = new Sequelize(process.env.DATABASE_URL);
 
 class Article extends Model {}
 class Chunk extends Model {}
