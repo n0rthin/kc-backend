@@ -1,5 +1,7 @@
 const { Sequelize, Model, DataTypes } = require("sequelize");
-const sequelize = new Sequelize(process.env.DATABASE_URL);
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  ssl: true,
+});
 
 class Article extends Model {}
 class Chunk extends Model {}
