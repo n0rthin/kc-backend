@@ -11,7 +11,7 @@ const openai = new OpenAIApi(
 
 async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
   console.log(
-    `Obtaining key insights for ${url}, maxTokens=${taxTokens}, useSmartModel=${useSmartModel}`
+    `Obtaining key insights for ${url}, maxTokens=${maxTokens}, useSmartModel=${useSmartModel}`
   );
   console.log(`Scrapping URL...`);
   const articleText = await scrapArticleContent(url);
