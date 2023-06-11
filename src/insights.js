@@ -9,7 +9,12 @@ const openai = new OpenAIApi(
   })
 );
 
-async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
+async function getKeyInsights({
+  url,
+  articleId,
+  maxTokens = 2048,
+  useSmartModel = true,
+}) {
   console.log(
     `Obtaining key insights for ${url}, maxTokens=${maxTokens}, useSmartModel=${useSmartModel}`
   );
@@ -23,6 +28,12 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     const logPrefix = `Chunk ${i + 1}/${chunks.length}.`;
+
+    const chunkInstance = await Chunk.create({
+      content: chunk,
+      article_id: articleId,
+    });
+
     const prompt = `This is a part of the article:\n\n${chunk}\n\nProvide valuable insights from this article.\nYour response should be a valid json array where each item is a string containing one insight.\nIf you don't see any valuable insights in the article just respond with empty array.\nDo not include anything else besides json array with insights.\nMake sure that your response can be parsed by json.loads in python without errors. JSON:`;
     const model = useSmartModel ? "gpt-4" : "gpt-3.5-turbo";
     const messages = [{ role: "user", content: prompt }];
@@ -56,14 +67,19 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
         }
       }
     }
+
+    let insights;
     try {
       console.log(`${logPrefix} Parsing GPT response...`);
-      const insights = JSON.parse(
-        response.data.choices[0].message.content.trim()
-      );
-      keyInsights[chunk] = insights;
+      insights = JSON.parse(response.data.choices[0].message.content.trim());
     } catch (err) {
       console.log(`${logPrefix} Failed to parse ${model} response`, err);
+    }
+
+    if (insights) {
+      for (const insight of insights) {
+        await Insight.create({ insight, chunk_id: chunkInstance.id });
+      }
     }
   }
 
@@ -71,18 +87,12 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
 }
 
 async function generateAndStoreKeyInsights(url) {
-  const keyPoints = await getKeyInsights({ url, useSmartModel: true });
   const article = await Article.create({ url });
-
-  for (const chunk in keyPoints) {
-    const chunkInstance = await Chunk.create({
-      content: chunk,
-      article_id: article.id,
-    });
-    for (const insight of keyPoints[chunk]) {
-      await Insight.create({ insight, chunk_id: chunkInstance.id });
-    }
-  }
+  await getKeyInsights({
+    url,
+    articleId: article.id,
+    useSmartModel: true,
+  });
 
   console.log(`Key points for the url ${url} have been saved successfully.`);
 }
