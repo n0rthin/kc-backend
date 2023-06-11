@@ -1,8 +1,12 @@
 const { Insight, Chunk, Article } = require("./db_entities");
 const { Op } = require("sequelize");
 
+const INSIGHTS_LENGTH_LIMIT = 400;
+
 async function sendInsight(bot, chatId) {
+  console.log(`Sending insights to the ${chatId} chat`);
   // Query the oldest undelivered insight
+  console.log(chatId, "searching for undelivered insights");
   const { next } = await iterateInsights();
   let totalLength = 0;
   const groupedInsights = {};
@@ -12,7 +16,7 @@ async function sendInsight(bot, chatId) {
     for (const insight of insights) {
       const lengthIfAdded = totalLength + insight.insight.length;
       const url = insight.chunk.article.url;
-      if (lengthIfAdded <= 400) {
+      if (lengthIfAdded <= INSIGHTS_LENGTH_LIMIT) {
         if (!groupedInsights[url]) groupedInsights[url] = [];
         groupedInsights[url].push(insight);
         totalLength = lengthIfAdded;
@@ -23,6 +27,13 @@ async function sendInsight(bot, chatId) {
       }
     }
   }
+
+  console.log(
+    chatId,
+    `found ${
+      Object.values(groupedInsights).flat().length
+    } insights that are less than ${INSIGHTS_LENGTH_LIMIT} characters. Preparing message`
+  );
 
   const groupedMessages = [];
 

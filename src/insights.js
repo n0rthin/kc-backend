@@ -10,8 +10,14 @@ const openai = new OpenAIApi(
 );
 
 async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
+  console.log(
+    `Obtaining key insights for ${url}, maxTokens=${taxTokens}, useSmartModel=${useSmartModel}`
+  );
+  console.log(`Scrapping URL...`);
   const articleText = await scrapArticleContent(url);
+  console.log(`URL scrapped. Splitting into chunks...`);
   const chunks = splitText(articleText, maxTokens);
+  console.log(`Splited content into ${chunks.length} chunks`);
   const keyInsights = {};
 
   for (const chunk of chunks) {
@@ -19,6 +25,11 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
     const model = useSmartModel ? "gpt-4" : "gpt-3.5-turbo";
     const messages = [{ role: "user", content: prompt }];
     let response;
+    console.log(
+      `Asking GPT for insights. Prompt: ${prompt
+        .replace()
+        .replace(/\n/g, "\\n")}`
+    );
     while (true) {
       try {
         response = await openai.createChatCompletion({
@@ -42,12 +53,13 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
       }
     }
     try {
+      console.log("Parsing GPT response...");
       const insights = JSON.parse(
         response.data.choices[0].message.content.trim()
       );
       keyInsights[chunk] = insights;
     } catch (err) {
-      console.log(`failed to parse ${model} response`, err);
+      console.log(`Failed to parse ${model} response`, err);
     }
   }
 
@@ -55,7 +67,7 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
 }
 
 async function generateAndStoreKeyInsights(url) {
-  const keyPoints = await getKeyInsights({ url, useSmartModel: false });
+  const keyPoints = await getKeyInsights({ url, useSmartModel: true });
   const article = await Article.create({ url });
 
   for (const chunk in keyPoints) {
@@ -68,7 +80,7 @@ async function generateAndStoreKeyInsights(url) {
     }
   }
 
-  console.log(`Key points for the url ${url} have been stored successfully.`);
+  console.log(`Key points for the url ${url} have been saved successfully.`);
 }
 
 module.exports = {
