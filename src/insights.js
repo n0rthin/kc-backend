@@ -95,7 +95,8 @@ function getURLProcessingQueue() {
 
   async function processQueue() {
     proccessingInProgress = true;
-    for (url of queue) {
+    let url;
+    while ((url = queue.shift())) {
       try {
         await generateAndStoreKeyInsights(url);
       } catch (err) {
