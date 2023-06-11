@@ -1,5 +1,6 @@
 require("dotenv").config();
-cron = require("node-cron");
+const cron = require("node-cron");
+const http = require("http");
 const { bot } = require("./bot");
 const { sendInsight } = require("./delivery");
 
@@ -15,3 +16,6 @@ cron.schedule(
   }
 );
 console.log("Task scheduled");
+
+const server = http.createServer();
+server.listen(process.env.PORT);
