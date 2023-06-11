@@ -17,16 +17,17 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
   const articleText = await scrapArticleContent(url);
   console.log(`URL scrapped. Splitting into chunks...`);
   const chunks = splitText(articleText, maxTokens);
-  console.log(`Splited content into ${chunks.length} chunks`);
+  console.log(`Split content into ${chunks.length} chunks`);
   const keyInsights = {};
 
-  for (const chunk of chunks) {
-    const prompt = `This is a part of the article: ${chunk}\nProvide valuable insights from this article.\nYour response should be a valid json array where each item is a string containing one insight.\nIf you don't see any valuable insights in the article just respond with empty array.\nDo not include anything else besides json array with insights.\nMake sure that your response can be parsed by json.loads in python without errors. JSON:`;
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const prompt = `This is a part of the article:\n\n${chunk}\n\nProvide valuable insights from this article.\nYour response should be a valid json array where each item is a string containing one insight.\nIf you don't see any valuable insights in the article just respond with empty array.\nDo not include anything else besides json array with insights.\nMake sure that your response can be parsed by json.loads in python without errors. JSON:`;
     const model = useSmartModel ? "gpt-4" : "gpt-3.5-turbo";
     const messages = [{ role: "user", content: prompt }];
     let response;
     console.log(
-      `Asking GPT for insights. Prompt: ${prompt
+      `Chunk #${i + 1}. Asking GPT for insights. Prompt: ${prompt
         .replace()
         .replace(/\n/g, "\\n")}`
     );
@@ -41,25 +42,30 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
         break;
       } catch (err) {
         const errorForLogs = err.response
-          ? `${err.response.status} + ${err.response.statusText} + ${err.response.data}`
+          ? `${err.response.status} + ${
+              err.response.statusText
+            } + ${JSON.stringify(err.response.data)}`
           : err;
-        console.log("OpenAI API request has failed", errorForLogs);
+        console.log(
+          `Chunk #${i + 1}. OpenAI API request has failed`,
+          errorForLogs
+        );
         if (err.response?.status === 400 || err.status === 400) {
           throw err;
         } else {
-          console.log("Retrying in 5 seconds");
+          console.log(`Chunk #${i + 1}. Retrying in 5 seconds`);
           await new Promise((resolve) => setTimeout(resolve, 5000));
         }
       }
     }
     try {
-      console.log("Parsing GPT response...");
+      console.log(`Chunk #${i + 1}. Parsing GPT response...`);
       const insights = JSON.parse(
         response.data.choices[0].message.content.trim()
       );
       keyInsights[chunk] = insights;
     } catch (err) {
-      console.log(`Failed to parse ${model} response`, err);
+      console.log(`Chunk #${i + 1}. Failed to parse ${model} response`, err);
     }
   }
 
@@ -83,6 +89,36 @@ async function generateAndStoreKeyInsights(url) {
   console.log(`Key points for the url ${url} have been saved successfully.`);
 }
 
+function getURLProcessingQueue() {
+  const queue = [];
+  let proccessingInProgress = false;
+
+  async function processQueue() {
+    proccessingInProgress = true;
+    for (url of queue) {
+      generateAndStoreKeyInsights(url).catch((err) =>
+        console.log(`Failed to process ${url}`, err)
+      );
+    }
+    proccessingInProgress = false;
+  }
+
+  return {
+    addUrl(url) {
+      queue.push(url);
+      console.log(
+        `Added ${url} to queue. ${queue.length} items in queue currently`
+      );
+
+      if (!proccessingInProgress) {
+        processQueue();
+      }
+    },
+  };
+}
+
+const urlProcessingQueue = getURLProcessingQueue();
+
 module.exports = {
-  generateAndStoreKeyInsights,
+  urlProcessingQueue,
 };

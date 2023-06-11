@@ -1,6 +1,6 @@
 const TelegramBot = require("node-telegram-bot-api");
 const { parseUrl } = require("./parse_url");
-const { generateAndStoreKeyInsights } = require("./insights");
+const { urlProcessingQueue } = require("./insights");
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
@@ -25,9 +25,7 @@ bot.on("message", (msg) => {
   }
 
   bot.sendMessage(chatId, `URL ${url} will be added to queue`);
-  generateAndStoreKeyInsights(url).catch((err) => {
-    console.log(`Error while adding URL to queue`, err);
-  });
+  urlProcessingQueue.addUrl(url);
 });
 
 module.exports = {
