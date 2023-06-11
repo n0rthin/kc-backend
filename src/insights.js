@@ -22,12 +22,13 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
+    const logPrefix = `Chunk ${i + 1}/${chunks.length}.`;
     const prompt = `This is a part of the article:\n\n${chunk}\n\nProvide valuable insights from this article.\nYour response should be a valid json array where each item is a string containing one insight.\nIf you don't see any valuable insights in the article just respond with empty array.\nDo not include anything else besides json array with insights.\nMake sure that your response can be parsed by json.loads in python without errors. JSON:`;
     const model = useSmartModel ? "gpt-4" : "gpt-3.5-turbo";
     const messages = [{ role: "user", content: prompt }];
     let response;
     console.log(
-      `Chunk #${i + 1}. Asking GPT for insights. Prompt: ${prompt
+      `${logPrefix} Asking GPT for insights. Prompt: ${prompt
         .replace()
         .replace(/\n/g, "\\n")}`
     );
@@ -46,26 +47,23 @@ async function getKeyInsights({ url, maxTokens = 2048, useSmartModel = true }) {
               err.response.statusText
             } + ${JSON.stringify(err.response.data)}`
           : err;
-        console.log(
-          `Chunk #${i + 1}. OpenAI API request has failed`,
-          errorForLogs
-        );
+        console.log(`${logPrefix} OpenAI API request has failed`, errorForLogs);
         if (err.response?.status === 400 || err.status === 400) {
           throw err;
         } else {
-          console.log(`Chunk #${i + 1}. Retrying in 5 seconds`);
+          console.log(`${logPrefix} Retrying in 5 seconds`);
           await new Promise((resolve) => setTimeout(resolve, 5000));
         }
       }
     }
     try {
-      console.log(`Chunk #${i + 1}. Parsing GPT response...`);
+      console.log(`${logPrefix} Parsing GPT response...`);
       const insights = JSON.parse(
         response.data.choices[0].message.content.trim()
       );
       keyInsights[chunk] = insights;
     } catch (err) {
-      console.log(`Chunk #${i + 1}. Failed to parse ${model} response`, err);
+      console.log(`${logPrefix} Failed to parse ${model} response`, err);
     }
   }
 
