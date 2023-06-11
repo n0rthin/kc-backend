@@ -1,7 +1,4 @@
-const result = require("dotenv").config();
-if (result.error) {
-  throw result.error;
-}
+require("dotenv").config();
 cron = require("node-cron");
 const { bot } = require("./bot");
 const { sendInsight } = require("./delivery");
