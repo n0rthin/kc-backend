@@ -96,9 +96,11 @@ function getURLProcessingQueue() {
   async function processQueue() {
     proccessingInProgress = true;
     for (url of queue) {
-      generateAndStoreKeyInsights(url).catch((err) =>
-        console.log(`Failed to process ${url}`, err)
-      );
+      try {
+        await generateAndStoreKeyInsights(url);
+      } catch (err) {
+        console.log(`Failed to process ${url}`, err);
+      }
     }
     proccessingInProgress = false;
   }
