@@ -1,5 +1,6 @@
 const { Insight, Chunk, Article } = require("./db_entities");
 const { Op } = require("sequelize");
+const { escapeMarkdown } = require("./markdown");
 
 const INSIGHTS_LENGTH_LIMIT = 400;
 
@@ -39,17 +40,16 @@ async function sendInsight(bot, chatId) {
 
   for (let url in groupedInsights) {
     const insightText = groupedInsights[url].map(
-      (insight) => `*${insight.insight}*`
+      (insight) => `*${escapeMarkdown(insight.insight)}*`
     );
-    const groupedMessage = `${insightText.join("\n\n")}\n\nFrom: ${url}`;
+    const groupedMessage = `${insightText.join(
+      "\n\n"
+    )}\n\nFrom: ${escapeMarkdown(url)}`;
     groupedMessages.push(groupedMessage);
   }
 
   if (groupedMessages.length) {
-    let message = groupedMessages
-      .join("\n\n")
-      .replace(/\./g, "\\.")
-      .replace(/\-/g, "\\-");
+    let message = groupedMessages.join("\n\n");
     try {
       await bot.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
       console.log(`Insight has been sent successfully.`);

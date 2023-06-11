@@ -1,6 +1,7 @@
 const TelegramBot = require("node-telegram-bot-api");
 const { parseUrl } = require("./parse_url");
 const { urlProcessingQueue } = require("./insights");
+const { sendInsight } = require("./delivery");
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
@@ -12,8 +13,12 @@ bot.onText(/\/start/, (msg) => {
   bot.sendMessage(chatId, `Hi, ${msg.chat.first_name}`);
 });
 
+bot.onText(/\/send_next_delivery/, (msg) => {
+  sendInsight(bot, msg.chat.id);
+});
+
 bot.on("message", (msg) => {
-  if (msg.text === "/start") return;
+  if (["/start", "/send_next_delivery"].includes(msg.text)) return;
   const chatId = msg.chat.id;
   const text = msg.text;
 
