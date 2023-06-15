@@ -86,8 +86,15 @@ async function getKeyInsights({
   return keyInsights;
 }
 
-async function generateAndStoreKeyInsights(url) {
-  const article = await Article.create({ url });
+async function generateAndStoreKeyInsights({ url, userId }) {
+  const existingArticle = await Article.findOne({ where: { url } });
+  if (existingArticle) {
+    console.log(`Article for the url ${url} already exists.`);
+    await existingArticle.addUser(userId);
+    return;
+  }
+  const article = await Article.create({ url, user_id: userId });
+  article.addUser(userId);
   await getKeyInsights({
     url,
     articleId: article.id,
@@ -103,22 +110,25 @@ function getURLProcessingQueue() {
 
   async function processQueue() {
     proccessingInProgress = true;
-    let url;
-    while ((url = queue.shift())) {
+    let urlData;
+    while ((urlData = queue.shift())) {
       try {
-        await generateAndStoreKeyInsights(url);
+        await generateAndStoreKeyInsights(urlData);
       } catch (err) {
-        console.log(`Failed to process ${url}`, err);
+        console.log(
+          `Failed to process ${urlData.url}, userId: ${urlData.userId}`,
+          err
+        );
       }
     }
     proccessingInProgress = false;
   }
 
   return {
-    addUrl(url) {
-      queue.push(url);
+    addUrl(urlData) {
+      queue.push(urlData);
       console.log(
-        `Added ${url} to queue. ${queue.length} items in queue currently`
+        `Added ${urlData.url} for user ${urlData.userId} to queue. ${queue.length} items in queue currently`
       );
 
       if (!proccessingInProgress) {
