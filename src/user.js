@@ -3,7 +3,7 @@ const { User } = require("./db_entities");
 async function createUser({ tg_id }) {
   try {
     const user = await User.create({
-      tg_id,
+      tg_id: String(tg_id),
     });
     return user;
   } catch (err) {
@@ -14,7 +14,7 @@ async function createUser({ tg_id }) {
 function getUserByTgId({ tg_id }) {
   return User.findOne({
     where: {
-      tg_id,
+      tg_id: String(tg_id),
     },
   });
 }
