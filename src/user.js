@@ -2,6 +2,12 @@ const { User } = require("./db_entities");
 
 async function createUser({ tg_id }) {
   try {
+    const existingUser = await getUserByTgId({ tg_id });
+    if (existingUser) {
+      console.log("User already exists", existingUser);
+      return existingUser;
+    }
+
     const user = await User.create({
       tg_id: String(tg_id),
     });
