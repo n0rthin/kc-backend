@@ -16,8 +16,8 @@ bot.onText(/\/start/, async (msg) => {
     [
       "Hi, I'm KeyCue bot! I'll help you digest articles that you don't have time to read.",
       "Just send me a link to an article, I'll process it and gather key insights for you. Then I'll send you a digest of insights every 4 hours.",
-      "You'll get up to 400 characters of insights per delivery. Insights will be send in the order they were gathered (so the order in which you sent me the links).",
-      "User /send_next_delivery to get next delivery immediately. Keep in mind that it takes some time to process the article.",
+      "You'll get up to 400 characters of insights per delivery. Insights will be send in the order they were gathered (the order in which you sent me the links).",
+      "Use /send_next_delivery to get next delivery immediately. Keep in mind that it takes some time to process the article.",
     ].join("\n")
   );
 
