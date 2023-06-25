@@ -34,7 +34,7 @@ async function getKeyInsights({
       article_id: articleId,
     });
 
-    const prompt = `This is a part of the article:\n\n${chunk}\n\nProvide valuable insights from this article.\nYour response should be a valid json array where each item is a string containing one insight.\nIf you don't see any valuable insights in the article just respond with empty array.\nDo not include anything else besides json array with insights.\nMake sure that your response can be parsed by json.loads in python without errors. JSON:`;
+    const prompt = `This is a part of the article:\n\n${chunk}\n\nProvide 1-2 the most valuable insights from this article.\nYour response should be a valid json array where each item is a string containing one insight.\nIf you don't see any valuable insights in the article just respond with empty array.\nDo not include anything else besides json array with insights.\nMake sure that your response can be parsed by json.loads in python without errors. There should only 1 or 2 insights. JSON:`;
     const model = useSmartModel ? "gpt-4" : "gpt-3.5-turbo";
     const messages = [{ role: "user", content: prompt }];
     let response;
@@ -77,7 +77,7 @@ async function getKeyInsights({
     }
 
     if (insights) {
-      for (const insight of insights) {
+      for (const insight of insights.slice(0, 2)) {
         await Insight.create({ insight, chunk_id: chunkInstance.id });
       }
     }
